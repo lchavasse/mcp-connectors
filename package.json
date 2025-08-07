@@ -1,0 +1,63 @@
+{
+  "name": "@stackone/mcp-connectors",
+  "version": "0.1.0",
+  "description": "MCP connectors for disco.dev",
+  "module": "./dist/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "prepare": "husky",
+    "build": "bun -b tsdown",
+    "prepublishOnly": "bun run build",
+    "test": "bun test",
+    "lint": "biome check .",
+    "typecheck": "tsgo --noEmit",
+    "format": "biome format --write ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.6",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.5.3",
+    "@types/bun": "^1.2.4",
+    "@types/node": "^22.13.5",
+    "@typescript/native-preview": "^7.0.0-dev.20250623.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.0",
+    "publint": "^0.3.12",
+    "tsdown": "^0.12.8",
+    "unplugin-unused": "^0.5.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StackOneHQ/mcp-connectors.git"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "connectors",
+    "stackone",
+    "saas",
+    "integrations"
+  ],
+  "author": "StackOne",
+  "license": "Apache-2.0",
+  "bugs": "https://github.com/StackOneHQ/mcp-connectors/issues",
+  "homepage": "https://github.com/StackOneHQ/mcp-connectors#readme",
+  "lint-staged": {
+    "*": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
+  }
+}

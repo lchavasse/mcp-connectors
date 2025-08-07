@@ -1,0 +1,12 @@
+[test]
+preload = ["./bun.test.setup.ts"]
+
+[install]
+auto = "fallback"
+peer = false
+
+[install.cache]
+dir = "~/.bun/install/cache"
+
+[install.lockfile]
+print = "yarn"
