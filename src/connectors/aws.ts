@@ -1,5 +1,5 @@
-import { mcpConnectorConfig } from '../config-types';
 import { z } from 'zod';
+import { mcpConnectorConfig } from '../config-types';
 
 interface AwsCredentials {
   accessKeyId: string;
@@ -425,7 +425,7 @@ class AwsClient {
       }
 
       const obj: Record<string, unknown> = {};
-      for (const child of element.children) {
+      for (const child of Array.from(element.children)) {
         const key = child.tagName;
         const value = parseElement(child);
 

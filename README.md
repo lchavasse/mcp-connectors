@@ -1,6 +1,6 @@
 # @stackone/mcp-connectors
 
-MCP (Model Context Protocol) connectors for various SaaS services including GitHub, Slack, Linear, Notion, and many more.
+MCP Connectors for disco.dev.
 
 ## Installation
 
@@ -15,24 +15,11 @@ pnpm add @stackone/mcp-connectors
 ## Usage
 
 ```typescript
-import { GitHubConnectorConfig, SlackConnectorConfig } from '@stackone/mcp-connectors';
-
-// Use the connector configurations with your MCP server
-const githubConnector = GitHubConnectorConfig;
-const slackConnector = SlackConnectorConfig;
+import {
+  GitHubConnectorConfig,
+  SlackConnectorConfig,
+} from "@stackone/mcp-connectors";
 ```
-
-## Available Connectors
-
-- **Productivity**: Asana, Linear, Jira, Todoist, Notion
-- **Communication**: Slack, LinkedIn
-- **Development**: GitHub, Langsmith, Pylon, Supabase
-- **Data & Analytics**: Datadog, Tinybird, Turbopuffer, Logfire
-- **AI & ML**: Deepseek, Perplexity, Replicate, ElevenLabs, Fal
-- **Business**: Deel, HiBob, Xero, Attio
-- **Security**: OnePassword
-- **Cloud**: AWS, Google Drive
-- **Other**: DuckDuckGo, Fireflies, Incident, StackOne
 
 ## Development
 

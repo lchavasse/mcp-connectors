@@ -1,6 +1,6 @@
-import { mcpConnectorConfig } from '../config-types';
 import OpenAI from 'openai';
 import { z } from 'zod';
+import { mcpConnectorConfig } from '../config-types';
 
 interface Document {
   id: string;

@@ -1,4 +1,4 @@
-name: Lint
+name: Check
 
 on:
   push:
@@ -21,8 +21,8 @@ jobs:
       - name: 💫 Install dependencies
         run: bun i
 
-      - name: 🔍 Run linter
-        run: bun run lint
+      - name: 🔍 Run Biome
+        run: bun run check
 
       - name: 📝 Type check
         run: bun run typecheck

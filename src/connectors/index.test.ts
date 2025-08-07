@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { allConnectors } from './index';
 
 describe('allConnectors', () => {
@@ -8,13 +8,13 @@ describe('allConnectors', () => {
   });
 
   test('each connector should have required properties', () => {
-    allConnectors.forEach((connector) => {
+    for (const connector of allConnectors) {
       expect(connector).toHaveProperty('name');
       expect(connector).toHaveProperty('key');
       expect(connector).toHaveProperty('version');
       expect(connector).toHaveProperty('credentials');
       expect(connector).toHaveProperty('setup');
       expect(connector).toHaveProperty('tools');
-    });
+    }
   });
 });

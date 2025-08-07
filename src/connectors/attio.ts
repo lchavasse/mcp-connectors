@@ -1,5 +1,5 @@
-import { mcpConnectorConfig } from '../config-types';
 import { z } from 'zod';
+import { mcpConnectorConfig } from '../config-types';
 
 interface AttioList {
   id: {

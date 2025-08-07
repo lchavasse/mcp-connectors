@@ -1,5 +1,5 @@
-import { mcpConnectorConfig } from '../config-types';
 import { z } from 'zod';
+import { mcpConnectorConfig } from '../config-types';
 
 const searchDocumentation = async (keywords: string): Promise<string> => {
   const res = await fetch('https://docs.stackone.com/llms-full.txt');

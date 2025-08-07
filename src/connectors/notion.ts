@@ -6,8 +6,8 @@ import type {
   SearchParameters,
   UpdatePageParameters,
 } from '@notionhq/client/build/src/api-endpoints';
-import { mcpConnectorConfig } from '../config-types';
 import { z } from 'zod';
+import { mcpConnectorConfig } from '../config-types';
 
 const createNotionClient = (token: string) => {
   return new Client({

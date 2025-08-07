@@ -1,6 +1,6 @@
-import { env } from 'cloudflare:workers';
-import { mcpConnectorConfig } from '../config-types';
 import { z } from 'zod';
+import type { ConnectorContext } from '../config-types';
+import { mcpConnectorConfig } from '../config-types';
 import { simpleSearch } from './utils/lexical-search';
 
 enum DocumentationCategory {
@@ -259,7 +259,8 @@ const fuzzySearchProviders = (query?: string): DocumentationProvider[] => {
 const searchDocumentation = async (
   providerKey: string,
   query: string,
-  maxResults = 5
+  maxResults = 5,
+  context?: ConnectorContext
 ): Promise<string> => {
   const provider = DOCUMENTATION_PROVIDERS.find((p) => p.key === providerKey);
 
@@ -270,12 +271,12 @@ const searchDocumentation = async (
   try {
     // Try to get cached documentation first
     let text: string | null = null;
-    const cache = env.DOC_CACHE;
+    const cache = context?.cache;
     const cacheKey = `docs:${providerKey}:v2`;
 
     if (cache) {
       try {
-        text = await cache.get(cacheKey, { type: 'text' });
+        text = await cache.get(cacheKey);
       } catch (error) {
         console.warn(`KV cache read error for ${providerKey}:`, error);
       }
@@ -638,12 +639,13 @@ export const DocumentationConnectorConfig = mcpConnectorConfig({
           .describe('Maximum number of results to return (1-10). Default is 5.')
           .optional(),
       }),
-      handler: async (args, _context) => {
+      handler: async (args, context) => {
         try {
           const result = await searchDocumentation(
             args.provider_key,
             args.query,
-            args.max_results || 5
+            args.max_results || 5,
+            context
           );
 
           // Check if result indicates an error or no results

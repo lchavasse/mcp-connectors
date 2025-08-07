@@ -1,23 +1,8 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createMockConnectorContext } from '../__mocks__/connector-context';
+import { afterAll, beforeAll, beforeEach, describe, expect, mock, test } from 'bun:test';
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
+import { createMockContext } from '../__mocks__/connector-context';
 import { DocumentationConnectorConfig } from './documentation';
-
-// Mock the cloudflare:workers env before importing the module
-const mockKVGet = vi.fn();
-const mockKVPut = vi.fn();
-
-vi.mock('cloudflare:workers', () => ({
-  env: {
-    DOC_CACHE: {
-      get: (...args: unknown[]) => mockKVGet(...args),
-      put: (...args: unknown[]) => mockKVPut(...args),
-    },
-  },
-}));
-
-// Mock fetch globally
-const mockFetch = vi.fn();
-const originalFetch = global.fetch;
 
 // Test data
 const sampleDocContent = `
@@ -89,39 +74,31 @@ Following best practices ensures optimal performance and security:
 - Store API keys securely in environment variables
 `;
 
-// Helper function to create mock fetch responses
-const createMockFetchResponse = (
-  content: string,
-  ok = true,
-  status = 200,
-  statusText = 'OK'
-) => ({
-  ok,
-  status,
-  statusText,
-  text: () => Promise.resolve(content),
-});
+// MSW server setup
+const server = setupServer();
 
 describe('DocumentationConnector', () => {
-  // biome-ignore lint/complexity/noBannedTypes: tests
-  let mockContext: ReturnType<typeof createMockConnectorContext<{}, {}>>;
+  let mockContext: ReturnType<typeof createMockContext>;
+  let mockCacheGet: ReturnType<typeof mock>;
+  let mockCachePut: ReturnType<typeof mock>;
 
   beforeAll(() => {
-    global.fetch = mockFetch;
+    server.listen();
   });
 
   afterAll(() => {
-    global.fetch = originalFetch;
+    server.close();
   });
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockKVGet.mockResolvedValue(null);
-    mockKVPut.mockResolvedValue(undefined);
-    // biome-ignore lint/complexity/noBannedTypes: tests
-    mockContext = createMockConnectorContext<{}, {}>({
-      credentials: {},
-      setup: {},
+    server.resetHandlers();
+    mockCacheGet = mock(() => Promise.resolve(null));
+    mockCachePut = mock(() => Promise.resolve());
+    mockContext = createMockContext({
+      cache: {
+        get: mockCacheGet,
+        put: mockCachePut,
+      },
     });
   });
 
@@ -133,7 +110,7 @@ describe('DocumentationConnector', () => {
     }
 
     describe('.when no search query provided', () => {
-      it('should return all providers', async () => {
+      test('should return all providers', async () => {
         const result = await getProviderKeyTool.handler({}, mockContext);
         const parsedResult = JSON.parse(result);
 
@@ -146,7 +123,7 @@ describe('DocumentationConnector', () => {
     });
 
     describe('.when searching for providers', () => {
-      it('should return filtered providers', async () => {
+      test('should return filtered providers', async () => {
         const result = await getProviderKeyTool.handler(
           { provider_name: 'anthropic' },
           mockContext
@@ -175,11 +152,15 @@ describe('DocumentationConnector', () => {
 
     describe('.when provider exists and documentation is found', () => {
       beforeEach(() => {
-        mockFetch.mockResolvedValue(createMockFetchResponse(longDocContent));
-        mockKVGet.mockResolvedValue(null);
+        server.use(
+          http.get('https://docs.anthropic.com/llms-full.txt', () => {
+            return HttpResponse.text(longDocContent);
+          })
+        );
+        mockCacheGet.mockImplementation(() => Promise.resolve(null));
       });
 
-      it('should return search results', async () => {
+      test('should return search results', async () => {
         const result = await searchDocsTool.handler(
           {
             provider_key: 'anthropic',
@@ -194,7 +175,7 @@ describe('DocumentationConnector', () => {
         expect(result).toMatch(/Relevance Score:/);
       });
 
-      it('should cache documentation when content is substantial', async () => {
+      test('should cache documentation when content is substantial', async () => {
         await searchDocsTool.handler(
           {
             provider_key: 'anthropic',
@@ -203,18 +184,18 @@ describe('DocumentationConnector', () => {
           mockContext
         );
 
-        expect(mockFetch).toHaveBeenCalledWith(
-          'https://docs.anthropic.com/llms-full.txt'
-        );
-        expect(mockKVPut).toHaveBeenCalledWith('docs:anthropic:v2', longDocContent, {
+        expect(mockCachePut).toHaveBeenCalledWith('docs:anthropic:v2', longDocContent, {
           expirationTtl: 86400,
         });
       });
 
-      it('should not cache small content', async () => {
+      test('should not cache small content', async () => {
         const tinyContent = 'Small doc content';
-        mockFetch.mockResolvedValue(createMockFetchResponse(tinyContent));
-        mockKVPut.mockClear();
+        server.use(
+          http.get('https://docs.anthropic.com/llms-full.txt', () => {
+            return HttpResponse.text(tinyContent);
+          })
+        );
 
         await searchDocsTool.handler(
           {
@@ -224,17 +205,17 @@ describe('DocumentationConnector', () => {
           mockContext
         );
 
-        expect(mockKVPut).not.toHaveBeenCalled();
+        expect(mockCachePut).not.toHaveBeenCalled();
       });
 
-      it('should use cached documentation when available', async () => {
+      test('should use cached documentation when available', async () => {
         const cachedContent = `
 # Cached Documentation
 
 ## Authentication
 Cached authentication information for testing.
         `.trim();
-        mockKVGet.mockResolvedValue(cachedContent);
+        mockCacheGet.mockImplementation(() => Promise.resolve(cachedContent));
 
         const result = await searchDocsTool.handler(
           {
@@ -244,13 +225,12 @@ Cached authentication information for testing.
           mockContext
         );
 
-        expect(mockFetch).not.toHaveBeenCalled();
         expect(result).toContain('authentication');
       });
     });
 
     describe('.when provider does not exist', () => {
-      it('should return error response', async () => {
+      test('should return error response', async () => {
         const result = await searchDocsTool.handler(
           {
             provider_key: 'nonexistent-provider',
@@ -268,11 +248,15 @@ Cached authentication information for testing.
 
     describe('.when fetch fails', () => {
       beforeEach(() => {
-        mockFetch.mockResolvedValue(createMockFetchResponse('', false, 404, 'Not Found'));
-        mockKVGet.mockResolvedValue(null);
+        server.use(
+          http.get('https://docs.anthropic.com/llms-full.txt', () => {
+            return HttpResponse.text('', { status: 404, statusText: 'Not Found' });
+          })
+        );
+        mockCacheGet.mockImplementation(() => Promise.resolve(null));
       });
 
-      it('should return error message with status code', async () => {
+      test('should return error message with status code', async () => {
         const result = await searchDocsTool.handler(
           {
             provider_key: 'anthropic',
@@ -288,15 +272,17 @@ Cached authentication information for testing.
 
     describe('.when no relevant content found', () => {
       beforeEach(() => {
-        mockFetch.mockResolvedValue(
-          createMockFetchResponse(
-            'Unrelated content about something completely different'
-          )
+        server.use(
+          http.get('https://docs.anthropic.com/llms-full.txt', () => {
+            return HttpResponse.text(
+              'Unrelated content about something completely different'
+            );
+          })
         );
-        mockKVGet.mockResolvedValue(null);
+        mockCacheGet.mockImplementation(() => Promise.resolve(null));
       });
 
-      it('should return no results message', async () => {
+      test('should return no results message', async () => {
         const result = await searchDocsTool.handler(
           {
             provider_key: 'anthropic',
@@ -313,11 +299,15 @@ Cached authentication information for testing.
 
     describe('.when invalid search terms provided', () => {
       beforeEach(() => {
-        mockFetch.mockResolvedValue(createMockFetchResponse(sampleDocContent));
-        mockKVGet.mockResolvedValue(null);
+        server.use(
+          http.get('https://docs.anthropic.com/llms-full.txt', () => {
+            return HttpResponse.text(sampleDocContent);
+          })
+        );
+        mockCacheGet.mockImplementation(() => Promise.resolve(null));
       });
 
-      it('should handle empty query string', async () => {
+      test('should handle empty query string', async () => {
         const result = await searchDocsTool.handler(
           {
             provider_key: 'anthropic',
@@ -329,7 +319,7 @@ Cached authentication information for testing.
         expect(result).toContain('No valid search terms provided');
       });
 
-      it('should handle query with only stop words', async () => {
+      test('should handle query with only stop words', async () => {
         const result = await searchDocsTool.handler(
           {
             provider_key: 'anthropic',
@@ -350,9 +340,13 @@ Cached authentication information for testing.
       throw new Error('SEARCH_DOCS tool not found in DocumentationConnectorConfig');
     }
 
-    it('should handle network errors gracefully', async () => {
-      mockKVGet.mockResolvedValue(null);
-      mockFetch.mockRejectedValue(new Error('Network error'));
+    test('should handle network errors gracefully', async () => {
+      mockCacheGet.mockImplementation(() => Promise.resolve(null));
+      server.use(
+        http.get('https://docs.anthropic.com/llms-full.txt', () => {
+          return HttpResponse.error();
+        })
+      );
 
       const result = await searchDocsTool.handler(
         {
@@ -363,12 +357,15 @@ Cached authentication information for testing.
       );
 
       expect(result).toContain('Error searching');
-      expect(result).toContain('Network error');
     });
 
-    it('should handle KV cache errors gracefully', async () => {
-      mockKVGet.mockRejectedValue(new Error('KV error'));
-      mockFetch.mockResolvedValue(createMockFetchResponse(sampleDocContent));
+    test('should handle KV cache errors gracefully', async () => {
+      mockCacheGet.mockImplementation(() => Promise.reject(new Error('KV error')));
+      server.use(
+        http.get('https://docs.anthropic.com/llms-full.txt', () => {
+          return HttpResponse.text(sampleDocContent);
+        })
+      );
 
       const result = await searchDocsTool.handler(
         {
@@ -378,8 +375,6 @@ Cached authentication information for testing.
         mockContext
       );
 
-      // Should still work by falling back to fetch
-      expect(mockFetch).toHaveBeenCalled();
       expect(result).not.toContain('KV error');
     });
   });

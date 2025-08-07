@@ -1,5 +1,5 @@
-import { mcpConnectorConfig } from '../config-types';
 import { z } from 'zod';
+import { mcpConnectorConfig } from '../config-types';
 
 const ELEVENLABS_API_BASE = 'https://api.elevenlabs.io/v1';
 

@@ -10,6 +10,12 @@ export interface ConnectorContext<
   getData<T = unknown>(key?: string): Promise<T | undefined>;
   setData(keyOrData: string | Record<string, unknown>, value?: unknown): Promise<void>;
 
+  // Cache support (optional - implementations may not have caching)
+  cache?: {
+    get(key: string): Promise<string | null>;
+    put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+  };
+
   // OAuth2 support
   getOauth2Credentials?(): Promise<z.infer<TOAuth2Schema>>;
   refreshOauth2Credentials?(): Promise<z.infer<TOAuth2Schema>>;

@@ -1,5 +1,5 @@
-import { mcpConnectorConfig } from '../config-types';
 import { z } from 'zod';
+import { mcpConnectorConfig } from '../config-types';
 
 // Xero API Base URLs
 const XERO_API_BASE_URL = 'https://api.xero.com/api.xro/2.0';

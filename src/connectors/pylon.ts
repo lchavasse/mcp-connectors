@@ -1,5 +1,5 @@
-import { mcpConnectorConfig } from '../config-types';
 import { z } from 'zod';
+import { mcpConnectorConfig } from '../config-types';
 
 // String similarity utility functions
 function levenshteinDistance(str1: string, str2: string): number {
