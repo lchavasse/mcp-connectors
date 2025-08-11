@@ -1,6 +1,6 @@
 {
     "name": "@stackone/mcp-connectors",
-    "version": "0.1.0",
+    "version": "0.0.1",
     "description": "MCP connectors for disco.dev",
     "module": "./dist/index.js",
     "main": "./dist/index.js",
@@ -12,10 +12,12 @@
     "type": "module",
     "files": ["dist", "README.md", "LICENSE"],
     "scripts": {
+        "start": "bun run --watch ./scripts/start-server.ts",
+        "start:test": "bun run --watch ./scripts/test-server.ts",
         "prepare": "husky",
         "build": "bun -b tsdown",
         "prepublishOnly": "bun run build",
-        "test": "bun test",
+        "test": "vitest --run",
         "check": "biome check .",
         "check:fix": "biome check --fix .",
         "typecheck": "tsgo --noEmit"
@@ -23,24 +25,27 @@
     "dependencies": {
         "@1password/connect": "^1.4.2",
         "@linear/sdk": "^55.0.0",
-        "@modelcontextprotocol/sdk": "^1.0.6",
+        "@modelcontextprotocol/sdk": "^1.17.2",
         "@notionhq/client": "^4.0.1",
+        "@orama/orama": "^3.1.11",
         "node-html-parser": "^7.0.1",
-        "okapibm25": "^1.4.1",
         "openai": "^5.12.1",
         "zod": "^3.23.8"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.5.3",
+        "@hono/mcp": "^0.1.1",
         "@types/bun": "^1.2.4",
         "@types/node": "^22.13.5",
         "@typescript/native-preview": "^7.0.0-dev.20250623.1",
+        "hono": "^4.9.0",
         "husky": "^9.1.7",
         "lint-staged": "^15.2.0",
         "msw": "^2.10.4",
         "publint": "^0.3.12",
         "tsdown": "^0.13.0",
-        "unplugin-unused": "^0.5.1"
+        "unplugin-unused": "^0.5.1",
+        "vitest": "^3.2.4"
     },
     "repository": {
         "type": "git",
@@ -52,7 +57,8 @@
         "connectors",
         "stackone",
         "saas",
-        "integrations"
+        "integrations",
+        "disco"
     ],
     "author": "StackOne",
     "license": "Apache-2.0",
