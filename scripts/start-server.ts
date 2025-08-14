@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
 import { StreamableHTTPTransport } from '@hono/mcp';
+import { serve } from '@hono/node-server';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { ConnectorContext, MCPConnectorConfig } from '@stackone/mcp-config-types';
+import { allConnectors } from '@stackone/mcp-connectors';
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
-import type { ConnectorContext, MCPConnectorConfig } from '../src/config-types/types.js';
-import { allConnectors } from '../src/connectors/index.js';
 
 // Helper to format timestamps for logs
 const getTimestamp = () => new Date().toISOString();
@@ -26,7 +27,9 @@ const customLogger = (
 };
 
 const getConnectorByKey = (connectorKey: string): MCPConnectorConfig | null => {
-  const connector = allConnectors.find((c) => c.key === connectorKey);
+  const connector = allConnectors.find(
+    (c) => c.key === connectorKey
+  ) as MCPConnectorConfig;
   return connector || null;
 };
 
@@ -101,7 +104,7 @@ const startServer = async (): Promise<{ app: Hono; port: number }> => {
     })
   );
   const { values } = parseArgs({
-    args: Bun.argv,
+    args: process.argv.slice(2),
     options: {
       connector: {
         type: 'string',
@@ -361,10 +364,4 @@ const startServer = async (): Promise<{ app: Hono; port: number }> => {
 };
 
 const { app, port } = await startServer();
-
-// Export the app with port configuration for Bun
-export default {
-  port,
-  fetch: app.fetch,
-  hostname: 'localhost',
-};
+serve({ fetch: app.fetch, port, hostname: 'localhost' });

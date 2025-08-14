@@ -219,39 +219,8 @@ The server logs all activity to stdout with clear formatting and status indicato
 
 ## Production Deployment
 
-For production deployments:
-
-1. **Use environment variables** instead of CLI arguments:
-
-   ```bash
-   CONNECTOR_KEY=github \
-   CREDENTIALS='{"token":"ghp_xxx"}' \
-   SETUP='{"org":"myorg"}' \
-   bun start
-   ```
-
-2. **Configure proper security:**
-
-   - Use HTTPS in production
-   - Implement authentication headers
-   - Set up proper CORS policies
-   - Use secure credential storage
-
-3. **Monitor and logging:**
-
-   - Set up structured logging
-   - Monitor server health
-   - Track MCP request metrics
-   - Alert on errors
-
-4. **Scale considerations:**
-   - Load balance multiple instances
-   - Use persistent connections
-   - Implement connection pooling
-   - Cache frequently accessed data
+tbc.
 
 ## Next Steps
 
-- Explore [individual connector documentation](./connectors/) for specific setup requirements
-- Learn about [writing custom connectors](./custom-connectors.md)
 - See [MCP protocol documentation](https://spec.modelcontextprotocol.io/) for advanced usage
