@@ -28,7 +28,7 @@
     },
     "packages/mcp-config-types": {
       "name": "@stackone/mcp-config-types",
-      "version": "0.0.3",
+      "version": "0.0.6",
       "devDependencies": {
         "zod": "^3.25",
       },
@@ -38,13 +38,13 @@
     },
     "packages/mcp-connectors": {
       "name": "@stackone/mcp-connectors",
-      "version": "0.0.4",
+      "version": "0.0.7",
       "dependencies": {
         "@1password/connect": "^1.4.2",
         "@linear/sdk": "^55.0.0",
         "@notionhq/client": "^4.0.1",
         "@orama/orama": "^3.1.11",
-        "@stackone/mcp-config-types": "workspace:*",
+        "@stackone/mcp-config-types": "^0.0.5",
         "node-html-parser": "^7.0.1",
         "openai": "^5.12.1",
         "zod": "^3.25",
@@ -901,6 +901,8 @@
     "@inquirer/core/wrap-ansi": ["wrap-ansi@6.2.0", "", { "dependencies": { "ansi-styles": "^4.0.0", "string-width": "^4.1.0", "strip-ansi": "^6.0.0" } }, "sha512-r6lPcBGxZXlIcymEu7InxDMhdW0KDxpLgoFLcguasxCaJ/SOIZwINatK9KY/tf+ZrlywOKU0UDj3ATXUBfxJXA=="],
 
     "@linear/sdk/graphql": ["graphql@15.10.1", "", {}, "sha512-BL/Xd/T9baO6NFzoMpiMD7YUZ62R6viR5tp/MULVEnbYJXZA//kRNW7J0j1w/wXArgL0sCxhDfK5dczSKn3+cg=="],
+
+    "@stackone/mcp-connectors/@stackone/mcp-config-types": ["@stackone/mcp-config-types@0.0.5", "", { "peerDependencies": { "zod": "^3.25" } }, "sha512-4Dh17d4KUNJBvFtwoba41MjO4DN4CGMtJPdWwDTZEkE90HSQbJ1O+P/ByctblHSTy5ABFeYNnqHOtaWbXkM0yg=="],
 
     "cli-truncate/string-width": ["string-width@7.2.0", "", { "dependencies": { "emoji-regex": "^10.3.0", "get-east-asian-width": "^1.0.0", "strip-ansi": "^7.1.0" } }, "sha512-tsaTIkKW9b4N+AEj+SVA+WhJzV7/zMhcSu78mLKWSk7cXMOSHsBKFWUs0fWwq8QyK3MgJBQRX6Gbi4kYbdvGkQ=="],
 
