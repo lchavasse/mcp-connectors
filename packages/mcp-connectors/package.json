@@ -10,11 +10,7 @@
         "./package.json": "./package.json"
     },
     "type": "module",
-    "files": [
-        "dist",
-        "README.md",
-        "LICENSE"
-    ],
+    "files": ["dist", "README.md", "LICENSE"],
     "scripts": {
         "build": "bun -b tsdown",
         "prepublishOnly": "bun run build",
@@ -28,7 +24,7 @@
         "@orama/orama": "^3.1.11",
         "node-html-parser": "^7.0.1",
         "openai": "^5.12.1",
-        "zod": "^3.23.8"
+        "zod": "^3.25"
     },
     "devDependencies": {
         "@stackone/mcp-config-types": "workspace:*"

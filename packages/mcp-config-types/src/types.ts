@@ -1,13 +1,17 @@
 import type { z } from 'zod';
 
+// Context interface with typed credentials and setup
 export interface ConnectorContext<
-  TCredentials = z.infer<z.ZodType>,
-  TSetup = z.infer<z.ZodType>,
-  TOAuth2Schema extends z.ZodType = z.ZodType,
+  // biome-ignore lint/suspicious/noExplicitAny: Type simplification
+  C = any,
+  // biome-ignore lint/suspicious/noExplicitAny: Type simplification
+  S = any,
+  // biome-ignore lint/suspicious/noExplicitAny: Type simplification
+  O = any,
 > {
   // server level api
-  getCredentials(): Promise<TCredentials>;
-  getSetup(): Promise<TSetup>;
+  getCredentials(): Promise<C>;
+  getSetup(): Promise<S>;
   getData<T = unknown>(key?: string): Promise<T | null>;
   setData(keyOrData: string | Record<string, unknown>, value?: unknown): Promise<void>;
 
@@ -16,61 +20,58 @@ export interface ConnectorContext<
   writeCache(key: string, value: string): Promise<void>;
 
   // OAuth2 support
-  getOauth2Credentials?(): Promise<z.infer<TOAuth2Schema>>;
-  refreshOauth2Credentials?(): Promise<z.infer<TOAuth2Schema>>;
+  getOauth2Credentials?(): Promise<O>;
+  refreshOauth2Credentials?(): Promise<O>;
 }
 
-export interface MCPResourceDefinition<
-  TCredentials = z.infer<z.ZodType>,
-  TSetup = z.infer<z.ZodType>,
-> {
+// Resource definition uses standard TypeScript types (no parsing needed)
+export interface MCPResourceDefinition {
   name: string;
   uri: string;
   title?: string;
   description?: string;
   mimeType?: string;
-  handler: (context: ConnectorContext<TCredentials, TSetup>) => string | Promise<string>;
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  handler: (context: ConnectorContext<any, any>) => string | Promise<string>;
 }
 
-export interface MCPConnectorConfig {
+// Tool definition with typed input and context
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+export interface MCPToolDefinition<I = any> {
+  name: string;
+  description: string;
+  schema: z.ZodType<I>; // Keep Zod schema for parsing
+  handler: (
+    args: I, // Typed args from schema inference
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    context: ConnectorContext<any, any> // Will be typed in the config function
+  ) => string | Promise<string>;
+}
+
+// Connector config with typed credentials and setup
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+export interface MCPConnectorConfig<C = any, S = any> {
   name: string;
   key: string;
   version: string;
   logo?: string;
   description?: string;
-  credentials: z.ZodType;
-  setup: z.ZodType;
+  credentials: z.ZodType<C>; // Keep Zod for parsing
+  setup: z.ZodType<S>; // Keep Zod for parsing
   initialState?: Record<string, unknown>;
-  tools: Record<string, MCPToolDefinition>;
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  tools: Record<string, MCPToolDefinition<any>>;
   prompts: Record<string, unknown>;
   resources: Record<string, MCPResourceDefinition>;
   examplePrompt?: string;
-  oauth2?: OAuth2ConnectorConfig<z.ZodType, z.ZodType>;
+  oauth2?: OAuth2ConnectorConfig<C>;
 }
 
-export interface MCPToolDefinition<
-  TCredentials = z.infer<z.ZodType>,
-  TSetup = z.infer<z.ZodType>,
-> {
-  name: string;
-  description: string;
-  // biome-ignore lint/suspicious/noExplicitAny: schema is not typed
-  schema: z.ZodObject<any>;
-  handler: (
-    args: unknown,
-    context: ConnectorContext<TCredentials, TSetup>
-  ) => string | Promise<string>;
-}
-
-// OAuth2 connector configuration with functions
-export interface OAuth2ConnectorConfig<
-  TCredentials extends z.ZodType = z.ZodType,
-  TSchema extends z.ZodType = z.ZodType,
-> {
-  schema: TSchema;
-  token: (credentials: z.infer<TCredentials>) => Promise<z.infer<TSchema>>;
-  refresh: (
-    credentials: z.infer<TCredentials>,
-    oauth2Credentials: z.infer<TSchema>
-  ) => Promise<z.infer<TSchema>>;
+// OAuth2 config with typed credentials
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+export interface OAuth2ConnectorConfig<C = any> {
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  schema: z.ZodType<any>; // Keep Zod for parsing
+  token: (credentials: C) => Promise<unknown>;
+  refresh: (credentials: C, oauth2Credentials: unknown) => Promise<unknown>;
 }
