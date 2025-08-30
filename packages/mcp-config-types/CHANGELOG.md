@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.0.11](https://github.com/lchavasse/mcp-connectors/compare/mcp-config-types-v0.0.10...mcp-config-types-v0.0.11) (2025-08-30)
+
+
+### Features
+
+* build server from connector ([#26](https://github.com/lchavasse/mcp-connectors/issues/26)) ([3769cfa](https://github.com/lchavasse/mcp-connectors/commit/3769cfaf0728e34e54ea0e7d6eb1b74a6777f1fa))
+* point to correct mcp-config types ([#28](https://github.com/lchavasse/mcp-connectors/issues/28)) ([066b4d1](https://github.com/lchavasse/mcp-connectors/commit/066b4d10f38f6c528eeb692ed58e8245c0fe288d))
+* **tooling:** monorepo for packages ([#19](https://github.com/lchavasse/mcp-connectors/issues/19)) ([cb90c84](https://github.com/lchavasse/mcp-connectors/commit/cb90c84165aaa41b038d846eb72f5969e470428c))
+
+
+### Bug Fixes
+
+* handle missing/undefined fields in parallel connector ([#36](https://github.com/lchavasse/mcp-connectors/issues/36)) ([3b20a9e](https://github.com/lchavasse/mcp-connectors/commit/3b20a9e58562681aff78f66ec63c97f7920ebaa1))
+* logos to use disco ([#31](https://github.com/lchavasse/mcp-connectors/issues/31)) ([5c5f734](https://github.com/lchavasse/mcp-connectors/commit/5c5f7344e022f33f1d8bdd098c94fcfdfb5e44f1))
+* move to build packages from dev ([#24](https://github.com/lchavasse/mcp-connectors/issues/24)) ([95be04c](https://github.com/lchavasse/mcp-connectors/commit/95be04cb19864f8f59520079a5ff3a817f7b235a))
+* parallel substring error ([#38](https://github.com/lchavasse/mcp-connectors/issues/38)) ([5d0717f](https://github.com/lchavasse/mcp-connectors/commit/5d0717f551b8f64487f241570981d866f0f1ebb1))
+* remove unused files from bundle ([#43](https://github.com/lchavasse/mcp-connectors/issues/43)) ([60e1c48](https://github.com/lchavasse/mcp-connectors/commit/60e1c48f9842de0f6023ae0d7a084cd00798acfd))
+* speed up types ([#22](https://github.com/lchavasse/mcp-connectors/issues/22)) ([37cc140](https://github.com/lchavasse/mcp-connectors/commit/37cc140f239ec13b520689fa59643aa7a4f03043))
+
 ## [0.0.10](https://github.com/StackOneHQ/mcp-connectors/compare/mcp-config-types-v0.0.9...mcp-config-types-v0.0.10) (2025-08-21)
 
 
