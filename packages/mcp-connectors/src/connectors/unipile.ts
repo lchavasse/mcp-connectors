@@ -128,7 +128,7 @@ class UnipileClient {
   private headers: { 'X-API-Key': string; 'Content-Type': string };
 
   constructor(dsn: string, apiKey: string) {
-    this.baseUrl = `https://${dsn}`;
+    this.baseUrl = dsn.startsWith('http') ? dsn : `https://${dsn}`;
     this.headers = {
       'X-API-Key': apiKey,
       'Content-Type': 'application/json',
@@ -266,14 +266,28 @@ export const UnipileConnectorConfig = mcpConnectorConfig({
   tools: (tool) => ({
     GET_ACCOUNTS: tool({
       name: 'unipile_get_accounts',
-      description: 'Get all connected messaging accounts from supported platforms: Mobile, Mail, WhatsApp, LinkedIn, Slack, Twitter, Telegram, Instagram, Messenger. Returns account details including connection parameters, ID, name, creation date, signatures, groups, and sources.',
+      description: 'Get all connected messaging accounts from supported platforms: Mobile, Mail, WhatsApp, LinkedIn, Slack, Twitter, Telegram, Instagram, Messenger. Returns clean account details including ID, name, type, status, source_id, and creation date.',
       schema: z.object({}),
       handler: async (args, context) => {
         try {
           const { dsn, apiKey } = await context.getCredentials();
           const client = new UnipileClient(dsn, apiKey);
           const response = await client.getAccounts();
-          return JSON.stringify(response);
+          
+          // Transform response to include only useful fields for LLM
+          const cleanedAccounts = response.items.map(account => ({
+            id: account.id,
+            name: account.name,
+            type: account.type,
+            created_at: account.created_at,
+            status: account.sources?.[0]?.status || 'UNKNOWN',
+            source_id: account.sources?.[0]?.id || account.id,
+          }));
+          
+          return JSON.stringify({
+            accounts: cleanedAccounts,
+            count: cleanedAccounts.length
+          });
         } catch (error) {
           return JSON.stringify({
             error: `Failed to get accounts: ${error instanceof Error ? error.message : String(error)}`,
@@ -283,7 +297,7 @@ export const UnipileConnectorConfig = mcpConnectorConfig({
     }),
     GET_CHATS: tool({
       name: 'unipile_get_chats',
-      description: 'Get all available chats for a specific account. Supports messaging platforms: Mobile, Mail, WhatsApp, LinkedIn, Slack, Twitter, Telegram, Instagram, Messenger.',
+      description: 'Get the most recent chats for a specific account, ordered by timestamp (newest first). Supports messaging platforms: Mobile, Mail, WhatsApp, LinkedIn, Slack, Twitter, Telegram, Instagram, Messenger.',
       schema: z.object({
         account_id: z.string().describe('The ID of the account to get chats from. Use the source ID from the account\'s sources array.'),
         limit: z.number().optional().describe('Maximum number of chats to return (default: 10)'),
@@ -293,7 +307,19 @@ export const UnipileConnectorConfig = mcpConnectorConfig({
           const { dsn, apiKey } = await context.getCredentials();
           const client = new UnipileClient(dsn, apiKey);
           const response = await client.getChats(args.account_id, args.limit);
-          return JSON.stringify(response);
+          
+          // Transform response to include only essential fields for LLM
+          const cleanedChats = response.items.map(chat => ({
+            id: chat.id,
+            name: chat.name || 'Unnamed Chat',
+            unread: chat.unread_count,
+            timestamp: chat.timestamp,
+          }));
+          
+          return JSON.stringify({
+            chats: cleanedChats,
+            count: cleanedChats.length
+          });
         } catch (error) {
           return JSON.stringify({
             error: `Failed to get chats: ${error instanceof Error ? error.message : String(error)}`,
@@ -303,17 +329,45 @@ export const UnipileConnectorConfig = mcpConnectorConfig({
     }),
     GET_CHAT_MESSAGES: tool({
       name: 'unipile_get_chat_messages',
-      description: 'Get all messages from a specific chat. Supports messages from: Mobile, Mail, WhatsApp, LinkedIn, Slack, Twitter, Telegram, Instagram, Messenger. Returns message details including text content, sender info, timestamps, and participant information.',
+      description: 'Get messages from a specific chat conversation. Returns clean message data with text, timestamps, and sender info. Much more focused than GET_RECENT_MESSAGES.',
       schema: z.object({
         chat_id: z.string().describe('The ID of the chat to get messages from'),
-        batch_size: z.number().optional().describe('Number of messages to fetch (default: 100)'),
+        batch_size: z.number().optional().describe('Number of messages to return (default: all available messages)'),
       }),
       handler: async (args, context) => {
         try {
           const { dsn, apiKey } = await context.getCredentials();
           const client = new UnipileClient(dsn, apiKey);
           const response = await client.getMessages(args.chat_id, args.batch_size);
-          return JSON.stringify(response);
+          
+          // Transform response to include only essential fields for LLM
+          const items = response.items || response;
+          if (!Array.isArray(items)) {
+            return JSON.stringify({
+              error: "Unexpected response format",
+              raw_response: response
+            });
+          }
+          
+          const cleanedMessages = items.map(message => ({
+            id: message.id,
+            text: message.text || '[No text content]',
+            timestamp: message.timestamp,
+            is_sender: message.is_sender === 1,
+            has_attachments: message.attachments?.length > 0,
+            quoted_text: message.quoted?.text || null,
+          }));
+          
+          // Apply our own batch_size filtering if specified
+          const finalMessages = args.batch_size 
+            ? cleanedMessages.slice(0, args.batch_size)
+            : cleanedMessages;
+          
+          return JSON.stringify({
+            messages: finalMessages,
+            count: finalMessages.length,
+            total_available: cleanedMessages.length
+          });
         } catch (error) {
           return JSON.stringify({
             error: `Failed to get chat messages: ${error instanceof Error ? error.message : String(error)}`,
@@ -323,17 +377,48 @@ export const UnipileConnectorConfig = mcpConnectorConfig({
     }),
     GET_RECENT_MESSAGES: tool({
       name: 'unipile_get_recent_messages',
-      description: 'Get recent messages from all chats associated with a specific account. Supports messages from: Mobile, Mail, WhatsApp, LinkedIn, Slack, Twitter, Telegram, Instagram, Messenger. Returns message details including text content, sender info, timestamps, attachments, reactions, quoted messages, and metadata.',
+      description: 'Get recent messages from all chats associated with a specific account. ⚠️ WARNING: This returns A LOT of data from multiple chats. RECOMMENDED: Use GET_CHATS first to see available chats, then use GET_CHAT_MESSAGES for specific conversations. Only use this for broad message overview.',
       schema: z.object({
         account_id: z.string().describe('The source ID of the account to get messages from. Use the id from the account\'s sources array.'),
-        batch_size: z.number().optional().describe('Number of messages to fetch per chat (default: 20)'),
+        batch_size: z.number().optional().describe('Number of messages to return (default: all available messages)'),
       }),
       handler: async (args, context) => {
         try {
           const { dsn, apiKey } = await context.getCredentials();
           const client = new UnipileClient(dsn, apiKey);
           const messages = await client.getAllMessages(args.account_id, args.batch_size);
-          return JSON.stringify({ messages });
+          
+          // Transform response to include only essential fields for LLM
+          const items = Array.isArray(messages) ? messages : ((messages as any).items || []);
+          if (!Array.isArray(items)) {
+            return JSON.stringify({
+              error: "Unexpected response format", 
+              raw_response: messages
+            });
+          }
+          
+          const cleanedMessages = items.map(message => ({
+            id: message.id,
+            text: message.text || '[No text content]',
+            timestamp: message.timestamp,
+            is_sender: message.is_sender === 1,
+            chat_name: message.chat_info?.name || 'Unknown Chat',
+            chat_id: message.chat_id,
+            has_attachments: message.attachments?.length > 0,
+            quoted_text: message.quoted?.text || null,
+          }));
+          
+          // Apply our own batch_size filtering if specified
+          const finalMessages = args.batch_size 
+            ? cleanedMessages.slice(0, args.batch_size)
+            : cleanedMessages;
+          
+          return JSON.stringify({
+            messages: finalMessages,
+            count: finalMessages.length,
+            total_available: cleanedMessages.length,
+            warning: "This tool returns data from multiple chats. Consider using GET_CHATS then GET_CHAT_MESSAGES for specific conversations."
+          });
         } catch (error) {
           return JSON.stringify({
             error: `Failed to get recent messages: ${error instanceof Error ? error.message : String(error)}`,
@@ -458,6 +543,66 @@ export const UnipileConnectorConfig = mcpConnectorConfig({
         }
       },
     }),
+    SAVE_CONTACT: tool({
+      name: 'unipile_save_contact',
+      description: 'Save or update a contact with essential information. Stores clean contact data without platform metadata. Allows flexible custom fields that the LLM can define. This is intentional - only call when user specifically wants to save contact information.',
+      schema: z.object({
+        name: z.string().describe('Contact name (required)'),
+        phone_number: z.string().optional().describe('Phone number for WhatsApp/SMS'),
+        whatsapp_chat_id: z.string().optional().describe('WhatsApp chat ID for direct messaging'),
+        linkedin_chat_id: z.string().optional().describe('LinkedIn chat ID for direct messaging'),
+        email: z.string().optional().describe('Email address'),
+        custom_fields: z.record(z.any()).optional().describe('Any additional fields the LLM wants to store (key-value pairs)'),
+        notes: z.string().optional().describe('Additional notes about the contact'),
+      }),
+      handler: async (args, context) => {
+        try {
+          const contactsData = await context.getData<Record<string, any>>('unipile_contacts') || {};
+          const now = new Date().toISOString();
+          
+          // Use whatsapp_chat_id as primary ID, fallback to phone_number or create a hash
+          const contactId = args.whatsapp_chat_id || 
+                          args.linkedin_chat_id || 
+                          args.phone_number || 
+                          `contact_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          
+          // Build the contact object
+          const contactData = {
+            id: contactId,
+            name: args.name,
+            phone_number: args.phone_number,
+            whatsapp_chat_id: args.whatsapp_chat_id,
+            linkedin_chat_id: args.linkedin_chat_id,
+            email: args.email,
+            notes: args.notes,
+            custom_fields: args.custom_fields || {},
+            created_at: contactsData[contactId]?.created_at || now,
+            updated_at: now,
+          };
+          
+          // Remove undefined fields to keep the data clean
+          Object.keys(contactData).forEach(key => {
+            if ((contactData as any)[key] === undefined) {
+              delete (contactData as any)[key];
+            }
+          });
+          
+          contactsData[contactId] = contactData;
+          await context.setData('unipile_contacts', contactsData);
+          
+          return JSON.stringify({
+            success: true,
+            message: `Contact "${args.name}" saved successfully`,
+            contact_id: contactId,
+            contact: contactData
+          });
+        } catch (error) {
+          return JSON.stringify({
+            error: `Failed to save contact: ${error instanceof Error ? error.message : String(error)}`,
+          });
+        }
+      },
+    }),
     CLEAR_CONTACT_MEMORY: tool({
       name: 'unipile_clear_contact_memory',
       description: 'Clear all stored contact frequency data from MCP persistent memory.',
@@ -486,7 +631,21 @@ export const UnipileConnectorConfig = mcpConnectorConfig({
           const { dsn, apiKey } = await context.getCredentials();
           const client = new UnipileClient(dsn, apiKey);
           const response = await client.getAccounts();
-          return JSON.stringify(response);
+          
+          // Transform response to include only useful fields for LLM
+          const cleanedAccounts = response.items.map(account => ({
+            id: account.id,
+            name: account.name,
+            type: account.type,
+            created_at: account.created_at,
+            status: account.sources?.[0]?.status || 'UNKNOWN',
+            source_id: account.sources?.[0]?.id || account.id,
+          }));
+          
+          return JSON.stringify({
+            accounts: cleanedAccounts,
+            count: cleanedAccounts.length
+          });
         } catch (error) {
           return JSON.stringify({
             error: `Failed to get accounts: ${error instanceof Error ? error.message : String(error)}`,

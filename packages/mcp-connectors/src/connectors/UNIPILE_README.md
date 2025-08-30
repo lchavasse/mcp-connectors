@@ -374,9 +374,9 @@ Common error scenarios:
 - Refresh chat list to get current IDs
 
 **Messages not being tracked:**
-- Ensure all optional parameters are provided to `send_message`
-- Check that contact data is being stored with `get_all_stored_contacts`
-- Verify persistence is working with `get_top_contacts`
+- Ensure all optional parameters are provided to `unipile_send_message`
+- Check that contact data is being stored with `unipile_get_all_stored_contacts`
+- Verify persistence is working with `unipile_get_top_contacts`
 
 ### Debug Mode
 
