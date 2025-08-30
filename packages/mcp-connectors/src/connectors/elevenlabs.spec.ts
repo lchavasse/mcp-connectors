@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeAll, afterAll, afterEach } from "vitest";
 import type { MCPToolDefinition } from "@stackone/mcp-config-types";
 import { createMockConnectorContext } from "../__mocks__/context";
 import { ElevenLabsConnectorConfig } from "./elevenlabs";
@@ -8,6 +8,17 @@ import { setupServer } from "msw/node";
 const server = setupServer();
 
 describe("#ElevenLabsConnector", () => {
+  beforeAll(() => {
+    server.listen();
+  });
+
+  afterEach(() => {
+    server.resetHandlers();
+  });
+
+  afterAll(() => {
+    server.close();
+  });
   describe(".TEXT_TO_SPEECH", () => {
     describe("when text is provided", () => {
       describe("and API key is valid", () => {
@@ -22,7 +33,6 @@ describe("#ElevenLabsConnector", () => {
               });
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.TEXT_TO_SPEECH as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -33,8 +43,6 @@ describe("#ElevenLabsConnector", () => {
           expect(result.success).toBe(true);
           expect(result.audio_base64).toBeDefined();
           expect(result.format).toBe("mp3_44100_128");
-
-          server.close();
         });
       });
 
@@ -48,7 +56,6 @@ describe("#ElevenLabsConnector", () => {
               );
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.TEXT_TO_SPEECH as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -58,8 +65,6 @@ describe("#ElevenLabsConnector", () => {
 
           expect(result.success).toBe(false);
           expect(result.error).toContain("401");
-
-          server.close();
         });
       });
 
@@ -70,7 +75,6 @@ describe("#ElevenLabsConnector", () => {
               return new HttpResponse(null, { status: 200 });
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.TEXT_TO_SPEECH as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -80,8 +84,6 @@ describe("#ElevenLabsConnector", () => {
 
           expect(result.success).toBe(false);
           expect(result.error).toContain("No audio data received");
-
-          server.close();
         });
       });
     });
@@ -106,7 +108,6 @@ describe("#ElevenLabsConnector", () => {
               });
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.LIST_VOICES as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -118,8 +119,6 @@ describe("#ElevenLabsConnector", () => {
           expect(result.voices).toHaveLength(1);
           expect(result.voices[0].voice_id).toBe("voice1");
           expect(result.voices[0].name).toBe("Rachel");
-
-          server.close();
         });
       });
 
@@ -141,7 +140,6 @@ describe("#ElevenLabsConnector", () => {
               });
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.LIST_VOICES as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -152,8 +150,6 @@ describe("#ElevenLabsConnector", () => {
           expect(result.success).toBe(true);
           expect(result.voices).toHaveLength(1);
           expect(result.voices[0].category).toBe("shared");
-
-          server.close();
         });
       });
     });
@@ -165,7 +161,6 @@ describe("#ElevenLabsConnector", () => {
             return HttpResponse.json({ detail: "Not Found" }, { status: 404 });
           })
         );
-        server.listen();
 
         const tool = ElevenLabsConnectorConfig.tools.LIST_VOICES as MCPToolDefinition;
         const mockContext = createMockConnectorContext();
@@ -175,8 +170,6 @@ describe("#ElevenLabsConnector", () => {
 
         expect(result.success).toBe(false);
         expect(result.error).toContain("404");
-
-        server.close();
       });
     });
   });
@@ -192,7 +185,6 @@ describe("#ElevenLabsConnector", () => {
               });
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.CREATE_AGENT as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -209,8 +201,6 @@ describe("#ElevenLabsConnector", () => {
           expect(result.success).toBe(true);
           expect(result.agent_id).toBe("agent_123");
           expect(result.voice_id).toBe("EXAVITQu4vr4xnSDxMaL");
-
-          server.close();
         });
       });
 
@@ -223,7 +213,6 @@ describe("#ElevenLabsConnector", () => {
               });
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.CREATE_AGENT as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -244,8 +233,6 @@ describe("#ElevenLabsConnector", () => {
           expect(result.name).toBe("Test Agent");
           expect(result.voice_id).toBe("custom_voice");
           expect(result.language).toBe("es");
-
-          server.close();
         });
       });
     });
@@ -268,7 +255,6 @@ describe("#ElevenLabsConnector", () => {
             );
           })
         );
-        server.listen();
 
         const tool = ElevenLabsConnectorConfig.tools.CREATE_AGENT as MCPToolDefinition;
         const mockContext = createMockConnectorContext();
@@ -284,8 +270,6 @@ describe("#ElevenLabsConnector", () => {
 
         expect(result.success).toBe(false);
         expect(result.error).toContain("422");
-
-        server.close();
       });
     });
   });
@@ -310,7 +294,6 @@ describe("#ElevenLabsConnector", () => {
               });
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.LIST_PHONE_NUMBERS as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -322,8 +305,6 @@ describe("#ElevenLabsConnector", () => {
           expect(result.phone_numbers).toHaveLength(1);
           expect(result.phone_numbers[0].phone_number_id).toBe("phnum_123");
           expect(result.count).toBe(1);
-
-          server.close();
         });
       });
 
@@ -340,7 +321,6 @@ describe("#ElevenLabsConnector", () => {
               ]);
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.LIST_PHONE_NUMBERS as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -352,8 +332,6 @@ describe("#ElevenLabsConnector", () => {
           expect(result.phone_numbers).toHaveLength(1);
           expect(result.phone_numbers[0].phone_number_id).toBe("phnum_456");
           expect(result.phone_numbers[0].phone_number).toBe("+9876543210");
-
-          server.close();
         });
       });
 
@@ -364,7 +342,6 @@ describe("#ElevenLabsConnector", () => {
               return HttpResponse.json({ phone_numbers: [] });
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.LIST_PHONE_NUMBERS as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -375,8 +352,6 @@ describe("#ElevenLabsConnector", () => {
           expect(result.success).toBe(true);
           expect(result.phone_numbers).toHaveLength(0);
           expect(result.message).toContain("No phone numbers found");
-
-          server.close();
         });
       });
     });
@@ -396,7 +371,6 @@ describe("#ElevenLabsConnector", () => {
               });
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.MAKE_PHONE_CALL as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -416,16 +390,16 @@ describe("#ElevenLabsConnector", () => {
           expect(result.callSid).toBe("CA123456789");
           expect(result.agent_id).toBe("agent_123");
           expect(result.to_number).toBe("+1234567890");
-
-          server.close();
         });
       });
 
       describe("and optional message is provided", () => {
         it("includes the additional context", async () => {
+          let requestBody: any;
           server.use(
-            http.post("https://api.elevenlabs.io/v1/convai/twilio/outbound-call", (req) => {
-              // Verify the request body includes additional_context
+            http.post("https://api.elevenlabs.io/v1/convai/twilio/outbound-call", async (req) => {
+              // Capture and verify the request body includes additional_context
+              requestBody = await req.request.json();
               return HttpResponse.json({
                 success: true,
                 message: "Call initiated with context",
@@ -434,7 +408,6 @@ describe("#ElevenLabsConnector", () => {
               });
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.MAKE_PHONE_CALL as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -452,8 +425,7 @@ describe("#ElevenLabsConnector", () => {
 
           expect(result.success).toBe(true);
           expect(result.conversation_id).toBe("conv_456");
-
-          server.close();
+          expect(requestBody.additional_context).toBe("This is a test call");
         });
       });
     });
@@ -466,7 +438,6 @@ describe("#ElevenLabsConnector", () => {
               return HttpResponse.json({ detail: "Agent not found" }, { status: 404 });
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.MAKE_PHONE_CALL as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -483,8 +454,6 @@ describe("#ElevenLabsConnector", () => {
 
           expect(result.success).toBe(false);
           expect(result.error).toContain("404");
-
-          server.close();
         });
       });
 
@@ -506,7 +475,6 @@ describe("#ElevenLabsConnector", () => {
               );
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.MAKE_PHONE_CALL as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -523,8 +491,6 @@ describe("#ElevenLabsConnector", () => {
 
           expect(result.success).toBe(false);
           expect(result.error).toContain("422");
-
-          server.close();
         });
       });
     });
@@ -547,7 +513,6 @@ describe("#ElevenLabsConnector", () => {
             });
           })
         );
-        server.listen();
 
         const tool = ElevenLabsConnectorConfig.tools.GET_USER_INFO as MCPToolDefinition;
         const mockContext = createMockConnectorContext();
@@ -559,8 +524,6 @@ describe("#ElevenLabsConnector", () => {
         expect(result.user.user_id).toBe("user_123");
         expect(result.user.available_characters).toBe(10000);
         expect(result.user.api_tier).toBe("pro");
-
-        server.close();
       });
     });
   });
@@ -578,7 +541,6 @@ describe("#ElevenLabsConnector", () => {
               });
             })
           );
-          server.listen();
 
           const tool = ElevenLabsConnectorConfig.tools.SPEECH_TO_TEXT as MCPToolDefinition;
           const mockContext = createMockConnectorContext();
@@ -597,8 +559,6 @@ describe("#ElevenLabsConnector", () => {
           expect(result.success).toBe(true);
           expect(result.transcript).toBe("Hello world");
           expect(result.language).toBe("en");
-
-          server.close();
         });
       });
 
@@ -629,7 +589,6 @@ describe("#ElevenLabsConnector", () => {
             });
           })
         );
-        server.listen();
 
         const tool = ElevenLabsConnectorConfig.tools.GENERATE_SOUND_EFFECTS as MCPToolDefinition;
         const mockContext = createMockConnectorContext();
@@ -646,8 +605,6 @@ describe("#ElevenLabsConnector", () => {
         expect(result.success).toBe(true);
         expect(result.audio_base64).toBeDefined();
         expect(result.description).toBe("Sound of rain falling");
-
-        server.close();
       });
     });
   });

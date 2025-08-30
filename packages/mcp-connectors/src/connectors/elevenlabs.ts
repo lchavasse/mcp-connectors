@@ -95,9 +95,7 @@ interface PhoneNumber {
   country_code: string;
 }
 
-interface PhoneNumbersResponse {
-  phone_numbers: PhoneNumber[];
-}
+
 
 // Helper function to make API calls to ElevenLabs
 const makeElevenLabsRequest = async (
@@ -645,7 +643,7 @@ export const ElevenLabsConnectorConfig = mcpConnectorConfig({
             success: true,
             agent_id: result.agent_id,
             name: args.name || 'Unnamed Agent',
-            voice_id: args.voice_id || 'EXAVITQu4vr4xnSDxMaL',
+            voice_id: args.voice_id || 'jqcCZkN6Knx8BJ5TBdYR',
             language: args.language || 'en',
             message:
               'Conversational AI agent created successfully. Use this agent_id to make phone calls.',
@@ -676,22 +674,22 @@ export const ElevenLabsConnectorConfig = mcpConnectorConfig({
             throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
           }
 
-          const result = await response.json();
+          const result = await response.json() as any;
 
           // Handle different possible response structures
-          let phoneNumbers = [];
+          let phoneNumbers: any[] = [];
           if (result.phone_numbers && Array.isArray(result.phone_numbers)) {
             phoneNumbers = result.phone_numbers;
           } else if (Array.isArray(result)) {
             phoneNumbers = result;
           } else {
-            // Log the actual response structure for debugging
-            console.log('Unexpected API response structure:', JSON.stringify(result, null, 2));
+            // Log that the response structure was unexpected without revealing sensitive data
+            console.log('Unexpected API response structure received from phone numbers endpoint');
           }
 
           return JSON.stringify({
             success: true,
-            phone_numbers: phoneNumbers.map((phone: any) => ({
+            phone_numbers: phoneNumbers.map((phone: any): PhoneNumber => ({
               phone_number_id: phone.phone_number_id || phone.id,
               phone_number: phone.phone_number || phone.number,
               name: phone.name || 'Unnamed',
@@ -700,7 +698,6 @@ export const ElevenLabsConnectorConfig = mcpConnectorConfig({
               country_code: phone.country_code || phone.country,
             })),
             count: phoneNumbers.length,
-            raw_response: result,
             message:
               phoneNumbers.length > 0
                 ? 'Use the phone_number_id from this list as the from_phone_number_id parameter when making phone calls.'
